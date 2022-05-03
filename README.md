@@ -9,7 +9,7 @@ This Python script allows you to run iperf3 until a specified bandwidth is reach
 First, clone the repository:
 
 ```bash
-git clone
+git clone https://github.com/SMU-ATT-Center-for-Virtualization/iperf_early_stopping
 ```
 
 Then, run the following command:
@@ -19,8 +19,12 @@ cd iperf_early_stopping
 python3 autostop.py
 ```
 
-The program will ask you for the command to run. By default, it will run `iperf3 -c 127.0.0.1 -t 1 -i 0.25`
+### **[IMPORTANT] Ensure that iperf server is running on the destination machine before proceeding!**
 
-Next, it will ask you to specify the breakpoint in Gbits/sec with a default of 50 Gb/s.
+The program will ask you for the command to run. By default, it will run `iperf -c 127.0.0.1 -t 60 -i 0.25`
+
+Next, it will ask you to specify the breakpoint in Gbits/sec with a default of 80 Gb/s.
 
 The program will then run the command until the output contains the specified breakpoint.
+
+**NOTE:** This program is designed to measure throughput over 1 Gbit/sec. Modifications are necessary to measure slower throughput speeds.
