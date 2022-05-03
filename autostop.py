@@ -15,17 +15,19 @@ def live_read(command, breakpoint):
         if output:
             output = output.strip().decode('utf-8')
             outputList = output.split(" ")
+            # print(outputList)
             values = []
-            for i in range(0, len(outputList)-1):
+            for i in range(0, len(outputList)):
                 try:
-                    if outputList[i] == "Gbits/sec":
+                    if outputList[i] == 'Gbits/sec':
                         values.append(float(outputList[i-1]))
+                        print(float(outputList[i-1]))
                 except ValueError:
                     continue
                 
-            print(values)
+            print(output)
             for v in values:
-                if v > float(breakpoint):
+                if v >= float(breakpoint):
                     print("Bitrate exceeded threshold")
                     sys.exit(1)
     rc = process.poll()
@@ -33,12 +35,12 @@ def live_read(command, breakpoint):
 
 
 def main(argv):
-    command = input("Enter command to execute [Default iperf3 -c 127.0.0.1 -t 1 -i 0.25]:")
+    command = input("Enter command to execute [Default iperf -c 127.0.0.1 -t 60 -i 0.25]:")
     if command == "":
-        command = "iperf3 -c 127.0.0.1 -t 1 -i 0.25"
-    breakpoint = input("Enter bitrate threshold in Gbits/sec [Default 50]:")
+        command = "iperf -c 127.0.0.1 -t 60 -i 0.25"
+    breakpoint = input("Enter bitrate threshold in Gbits/sec [Default 80]:")
     if breakpoint == "":
-        breakpoint = 50
+        breakpoint = 80
     try:
         float(breakpoint)
     except ValueError:
