@@ -4,7 +4,7 @@ import sys
 import scipy.stats as st
 import numpy
 
-def live_read(command, interval, width, minSamples, numToSkip):
+def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int):
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
         values = []
@@ -31,22 +31,22 @@ def live_read(command, interval, width, minSamples, numToSkip):
                     current_samples += 1
                 except ValueError:
                     continue
-                
-            print(values)
-            deg_freedom = len(values) - 1
-            sample_mean = numpy.nanmean(values)
-            sample_stderr = st.sem(values)
-            ci = st.t.interval(interval, deg_freedom, sample_mean, sample_stderr)
-            print(ci)
-            int_width = abs(sample_mean-ci[0])
-            print("Width: " + str(int_width))
-            if current_samples - numToSkip > minSamples and int_width < width:
-                print("Target reached!")
-                print("Final mean: " + str(sample_mean))
-                print("Final confidence interval: " + str(ci))
-                print("Final width: " + str(int_width))
-                sys.exit(0)
-            # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
+            if len(values) >= minSamples:
+                print(values)
+                deg_freedom = len(values) - 1
+                sample_mean = numpy.nanmean(values)
+                sample_stderr = st.sem(values)
+                ci = st.t.interval(interval, deg_freedom, sample_mean, sample_stderr)
+                print(ci)
+                int_width = abs(sample_mean-ci[0])
+                print("Width: " + str(int_width))
+                if int_width < width:
+                    print("Target reached!")
+                    print("Final mean: " + str(sample_mean))
+                    print("Final confidence interval: " + str(ci))
+                    print("Final width: " + str(int_width))
+                    sys.exit(0)
+                # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
     rc = process.poll()
     return rc
 
@@ -55,15 +55,6 @@ def main():
     command = input("Enter command to execute [Default iperf -c 127.0.0.1 -t 60 -i 0.25]:")
     if command == "":
         command = "iperf -c 127.0.0.1 -t 60 -i 0.25"
-    while True:
-        breakpoint = input("Enter bitrate threshold in Gbits/sec [Default 80]:")
-        if breakpoint == "":
-            breakpoint = 80
-        try:
-            float(breakpoint)
-            break
-        except ValueError:
-            print("Invalid input, please try again")
     # Things to ask user input: 
     # Confidence interval percentage (95%, 90%, etc)
     while True:
@@ -71,7 +62,7 @@ def main():
         if interval == "":
             interval = 0.95
         try:
-            float(interval)
+            interval = float(interval)
             break
         except ValueError:
             print("Invalid input, please try again")
@@ -81,16 +72,16 @@ def main():
         if width == "":
             width = 2
         try:
-            float(width)
+            width = float(width)
             break
         except ValueError:
             print("Invalid input, please try again")
     while True:
         minSamples = input("Enter minimum number of samples [Default 10]:")
         if minSamples == "":
-            minSamples = 10
+            minSamples = int(10)
         try:
-            float(minSamples)
+            minSamples = int(minSamples)
             break
         except ValueError:
             print("Invalid input, please try again")
@@ -98,14 +89,14 @@ def main():
     while True:
         numToSkip = input("Enter number of samples to skip [Default 10]:")
         if numToSkip == "":
-            numToSkip = 10
+            numToSkip = int(10)
         try:
-            float(breakpoint)
+            numToSkip = int(numToSkip)
             break
         except ValueError:
             print("Invalid input, please try again")
 
-    while True:
-        live_read(command, interval, width, minSamples, numToSkip)
+    live_read(command, interval, width, minSamples, numToSkip)
+    print("Did not attain target")
 
 main()
