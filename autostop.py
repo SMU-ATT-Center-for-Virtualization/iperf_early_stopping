@@ -8,6 +8,7 @@ def live_read(command, interval, width, minSamples, numToSkip):
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
         values = []
+        current_samples = 0
     except:
         print("Error: command not found")
         sys.exit(1)
@@ -18,14 +19,16 @@ def live_read(command, interval, width, minSamples, numToSkip):
         if output:
             output = output.strip().decode('utf-8')
             outputList = output.split(" ")
-            # print(outputList)
-            # 
             
             for i in range(0, len(outputList)):
                 try:
                     if outputList[i] == 'Gbits/sec':
-                        values.append(float(outputList[i-1]))
-                        print(float(outputList[i-1]))
+                        if current_samples < numToSkip:
+                            continue
+                        else:
+                            values.append(float(outputList[i-1]))
+                            print(float(outputList[i-1]))
+                    current_samples += 1
                 except ValueError:
                     continue
                 
@@ -37,11 +40,13 @@ def live_read(command, interval, width, minSamples, numToSkip):
             print(ci)
             int_width = abs(sample_mean-ci[0])
             print("Width: " + str(int_width))
-            # for v in values:
-                # if v >= float(breakpoint):
-                #     print("Bitrate exceeded threshold")
-                #     sys.exit(1)
-                    # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
+            if current_samples - numToSkip > minSamples and int_width < width:
+                print("Target reached!")
+                print("Final mean: " + str(sample_mean))
+                print("Final confidence interval: " + str(ci))
+                print("Final width: " + str(int_width))
+                sys.exit(0)
+            # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
     rc = process.poll()
     return rc
 
