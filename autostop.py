@@ -6,7 +6,7 @@ import numpy
 import os
 import signal
 
-def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int):
+def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int) -> bool:
     output_array = []
     width_achieved = False
     try:
@@ -105,4 +105,6 @@ def main():
     if not success:
         print("Did not attain target")
 
-main()
+
+if __name__ == "__main__":
+    main()
