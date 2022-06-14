@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This Python script allows you to run iperf3 until a specified bandwidth is reached.
+This Python script allows you to run iperf2 until a specified bandwidth is reached.
 
 ## How to run
 

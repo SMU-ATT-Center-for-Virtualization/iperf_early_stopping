@@ -3,8 +3,11 @@ import subprocess
 import sys
 import scipy.stats as st
 import numpy
+import os
+import signal
 
 def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int):
+    output_array = []
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
         values = []
@@ -14,10 +17,12 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
         sys.exit(1)
     while True:
         output = process.stdout.readline()
+        # if child process has stopped, exit loop
         if process.poll() is not None:
             break
         if output:
             output = output.strip().decode('utf-8')
+            output_array.append(output)
             outputList = output.split(" ")
             
             for i in range(0, len(outputList)):
@@ -35,8 +40,8 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                 print(values)
                 deg_freedom = len(values) - 1
                 sample_mean = numpy.nanmean(values)
-                sample_stderr = st.sem(values)
-                ci = st.t.interval(interval, deg_freedom, sample_mean, sample_stderr)
+                sample_sem = st.sem(values)
+                ci = st.t.interval(interval, deg_freedom, sample_mean, sample_sem)
                 print(ci)
                 int_width = abs(sample_mean-ci[0])
                 print("Width: " + str(int_width))
@@ -45,6 +50,12 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                     print("Final mean: " + str(sample_mean))
                     print("Final confidence interval: " + str(ci))
                     print("Final width: " + str(int_width))
+                    process.send_signal(signal.SIGINT)
+                    end_output, err = process.communicate()
+                    if end_output:
+                        output_array.append(end_output.decode('utf-8'))
+                    # TODO, write this output to a file for parsing later
+                    print(output_array)
                     sys.exit(0)
                 # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
     rc = process.poll()
@@ -58,7 +69,7 @@ def main():
     # Things to ask user input: 
     # Confidence interval percentage (95%, 90%, etc)
     while True:
-        interval = input("Enter the confidence interval as a decimal [Default 0.95]:")
+        interval = input("Enter the desired confidence level as a decimal [Default 0.95]:")
         if interval == "":
             interval = 0.95
         try:
@@ -68,16 +79,16 @@ def main():
             print("Invalid input, please try again")
     # Desired width and minimum # of samples
     while True:
-        width = input("Enter target interval width [Default 2]:")
+        width = input("Enter target interval percentage width (+/-) [Default 2.5]:")
         if width == "":
-            width = 2
+            width = 2.5
         try:
             width = float(width)
             break
         except ValueError:
             print("Invalid input, please try again")
     while True:
-        minSamples = input("Enter minimum number of samples [Default 10]:")
+        minSamples = input("Enter minimum number of samples [Default 20]:")
         if minSamples == "":
             minSamples = int(10)
         try:
