@@ -8,6 +8,7 @@ import signal
 
 def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int):
     output_array = []
+    width_achieved = False
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
         values = []
@@ -15,16 +16,13 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
     except:
         print("Error: command not found")
         sys.exit(1)
-    while True:
-        output = process.stdout.readline()
-        # if child process has stopped, exit loop
-        if process.poll() is not None:
-            break
-        if output:
-            output = output.strip().decode('utf-8')
-            output_array.append(output)
-            outputList = output.split(" ")
-            
+    for output in process.stdout:
+        output = output.strip().decode('utf-8')
+        print(output)
+        output_array.append(output)
+        outputList = output.split(" ")
+
+        if not width_achieved:
             for i in range(0, len(outputList)):
                 try:
                     if outputList[i] == 'Gbits/sec':
@@ -46,20 +44,16 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                 int_width = abs(sample_mean-ci[0])
                 print("Width: " + str(int_width))
                 if int_width < width:
+                    width_achieved = True
                     print("Target reached!")
                     print("Final mean: " + str(sample_mean))
                     print("Final confidence interval: " + str(ci))
                     print("Final width: " + str(int_width))
                     process.send_signal(signal.SIGINT)
-                    end_output, err = process.communicate()
-                    if end_output:
-                        output_array.append(end_output.decode('utf-8'))
-                    # TODO, write this output to a file for parsing later
-                    print(output_array)
-                    sys.exit(0)
-                # Change to when width reaches within a certain percentage from the mean (X bar minus right side of plus minus)
-    rc = process.poll()
-    return rc
+
+    # TODO, write this output to a file for parsing later
+    print(output_array)
+    return width_achieved
 
 
 def main():
@@ -107,7 +101,8 @@ def main():
         except ValueError:
             print("Invalid input, please try again")
 
-    live_read(command, interval, width, minSamples, numToSkip)
-    print("Did not attain target")
+    success = live_read(command, interval, width, minSamples, numToSkip)
+    if not success:
+        print("Did not attain target")
 
 main()
