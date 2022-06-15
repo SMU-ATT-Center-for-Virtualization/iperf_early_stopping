@@ -8,7 +8,8 @@ import signal
 import argparse
 import re
 
-def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int) -> bool:
+def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int,
+              output_file: str = None) -> bool:
     output_array = []
     width_achieved = False
     current_samples = 0
@@ -57,12 +58,13 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                         print("Final width: " + str(int_width))
                         process.send_signal(signal.SIGINT)
 
-    # TODO, write this output to a file for parsing later
+    # Write this output to a file for parsing later
     print(output_array)
-    with open('iperf_output.txt', 'w') as f:
-        for line in output_array:
-            f.write(line)
-            f.write('\n')
+    if output_file:
+        with open(output_file, 'w') as f:
+            for line in output_array:
+                f.write(line)
+                f.write('\n')
 
     return width_achieved
 
@@ -74,6 +76,7 @@ def main(argv):
     width = 2.5
     minSamples = 10
     numToSkip = 10
+    output_file = None
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--command', help='iPerf2 command to execute')
@@ -85,6 +88,7 @@ def main(argv):
     parser.add_argument('-m', '--min_samples', help='The minimum number of samples to use', type=int)
     parser.add_argument('-s', '--skip', help='this will skip n samples at the beginning of the test',
                         type=int)
+    parser.add_argument('-o', '--output_file', help='File to write iperf results to')
 
 
     args = parser.parse_args()
@@ -101,8 +105,10 @@ def main(argv):
         minSamples = args.min_samples
     if args.skip:
         numToSkip = args.skip
+    if args.output_file:
+        output_file = args.output_file
 
-    success = live_read(command, level, width, minSamples, numToSkip)
+    success = live_read(command, level, width, minSamples, numToSkip, output_file)
     if not success:
         print("Did not attain target")
 
