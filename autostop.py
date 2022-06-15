@@ -20,7 +20,6 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
         print("Error: command not found")
         sys.exit(1)
     for output in process.stdout:
-        print('here')
         if output == '':
             continue
         print(f'current samples {current_samples}')
