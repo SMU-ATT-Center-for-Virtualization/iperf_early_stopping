@@ -58,7 +58,7 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                         process.send_signal(signal.SIGINT)
 
     # Write this output to a file for parsing later
-    print(output_array)
+    # print(output_array)
     if output_file:
         with open(output_file, 'w') as f:
             for line in output_array:
