@@ -10,6 +10,7 @@ import re
 
 def live_read(command : str, interval : float, width : float, minSamples : int, numToSkip : int,
               output_file: str = None) -> bool:
+    print(f'TARGET WIDTH: {width}')
     output_array = []
     width_achieved = False
     current_samples = 0
@@ -22,7 +23,7 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
     for output in process.stdout:
         if output == '':
             continue
-        print(f'current samples {current_samples}')
+        # print(f'current samples {current_samples}')
         output = output.strip().decode('utf-8')
         print(output)
         output_array.append(output)
@@ -37,7 +38,7 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                 if current_samples <= numToSkip:
                     continue
 
-                print("using this value")
+                # print("using this value")
                 values.append(throughput)
 
                 if len(values) >= minSamples:
@@ -46,15 +47,16 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                     sample_mean = numpy.nanmean(values)
                     sample_sem = st.sem(values)
                     ci = st.t.interval(interval, deg_freedom, sample_mean, sample_sem)
-                    print(ci)
-                    int_width = abs(sample_mean-ci[0])
-                    print("Width: " + str(int_width))
-                    if int_width < width:
+                    # print(ci)
+                    interval_width = abs(sample_mean-ci[0])
+                    interval_percent_width = (interval_width/sample_mean)*100
+                    print("Width: " + str(interval_percent_width))
+                    if interval_percent_width < width:
                         width_achieved = True
                         print("Target reached!")
                         print("Final mean: " + str(sample_mean))
                         print("Final confidence interval: " + str(ci))
-                        print("Final width: " + str(int_width))
+                        print("Final width: +-" + str(interval_percent_width) + "%")
                         process.send_signal(signal.SIGINT)
 
     # Write this output to a file for parsing later
