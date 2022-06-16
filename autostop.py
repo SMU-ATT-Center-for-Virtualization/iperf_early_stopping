@@ -42,7 +42,7 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                 values.append(throughput)
 
                 if len(values) >= minSamples:
-                    print(values)
+                    # print(values)
                     deg_freedom = len(values) - 1
                     sample_mean = numpy.nanmean(values)
                     sample_sem = st.sem(values)
@@ -54,13 +54,28 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                     if interval_percent_width < width:
                         width_achieved = True
                         print("Target reached!")
-                        print("Final mean: " + str(sample_mean))
-                        print("Final confidence interval: " + str(ci))
-                        print("Final width: +-" + str(interval_percent_width) + "%")
+                        print(f"Final mean: {sample_mean}")
+                        print(f"Final confidence interval: {ci}")
+                        print(f"Final width: +-{interval_percent_width}%")
+                        print(f"Number of Samples: {len(values)}" )
                         process.send_signal(signal.SIGINT)
 
     # Write this output to a file for parsing later
     # print(output_array)
+    if not width_achieved:
+        deg_freedom = len(values) - 1
+        sample_mean = numpy.nanmean(values)
+        sample_sem = st.sem(values)
+        ci = st.t.interval(interval, deg_freedom, sample_mean, sample_sem)
+        # print(ci)
+        interval_width = abs(sample_mean-ci[0])
+        interval_percent_width = (interval_width/sample_mean)*100
+        print("Target not reached!")
+        print(f"Final mean: {sample_mean}")
+        print(f"Final confidence interval: {ci}")
+        print(f"Final width: +-{interval_percent_width}%")
+        # subtract 1 because this will count the end summary otherwise
+        print(f"Number of Samples: {len(values) - 1}" )
     if output_file:
         with open(output_file, 'w') as f:
             for line in output_array:
