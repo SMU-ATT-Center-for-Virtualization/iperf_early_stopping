@@ -15,8 +15,9 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
     width_achieved = False
     current_samples = 0
     cmdcpy = str(command)
+    multithread = False
     try:
-        multithread = re.search(r'-P (?P<threadCount>\d?)', cmdcpy)
+        multithread = re.search(r'-P (?P<threadCount>\d*)', cmdcpy)
         if int(multithread.group('threadCount')) > 1:
             multithread = True
         else:
