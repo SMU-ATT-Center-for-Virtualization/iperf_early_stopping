@@ -14,6 +14,17 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
     output_array = []
     width_achieved = False
     current_samples = 0
+    cmdcpy = str(command)
+    multithread = False
+    try:
+        multithread = re.search(r'-P (?P<threadCount>\d*)', cmdcpy)
+        if int(multithread.group('threadCount')) > 1:
+            multithread = True
+        else:
+            multithread = False
+    except AttributeError:
+        multithread = False
+    
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
         values = []
@@ -28,8 +39,8 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
         print(output)
         output_array.append(output)
 
-        if not width_achieved:
-
+        if not width_achieved and not multithread or re.search('\[SUM\]', output):
+            print('Using '+ output)
             throughput_match = re.search(r'(?P<throughput>\d+\.?\d+?)\s+\wbits\/sec', 
                                      output)
             if throughput_match:
@@ -87,7 +98,7 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
 
 def main(argv):
     # Parse command line arguments
-    command = "iperf -c 127.0.0.1 -t 60 -i 0.25 -f m"
+    command = "iperf -c 127.0.0.1 -t 60 -i 0.25 -f m -P 2"
     level = 0.95
     width = 2.5
     minSamples = 10
