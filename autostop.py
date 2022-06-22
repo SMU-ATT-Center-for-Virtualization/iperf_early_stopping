@@ -21,9 +21,21 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
         if int(multithread.group('threadCount')) > 1:
             multithread = True
         else:
+            print("NOT multithread0")
             multithread = False
     except AttributeError:
         multithread = False
+        try:
+            multithread = re.search(r'--parallel (?P<threadCount>\d*)', cmdcpy)
+            if int(multithread.group('threadCount')) > 1:
+                multithread = True
+            else:
+                print("NOT multithread0")
+                multithread = False
+        except AttributeError:
+            multithread = False
+        
+        print("NOT multithread1")
     
     try:
         process = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE)
