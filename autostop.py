@@ -65,23 +65,36 @@ def live_read(command : str, interval : float, width : float, minSamples : int, 
                 values.append(throughput)
 
                 if len(values) >= minSamples:
-                    # print(values)
-                    deg_freedom = len(values) - 1
-                    sample_mean = numpy.nanmean(values)
-                    sample_sem = st.sem(values)
-                    ci = st.t.interval(interval, deg_freedom, sample_mean, sample_sem)
-                    # print(ci)
-                    interval_width = abs(sample_mean-ci[0])
-                    interval_percent_width = (interval_width/sample_mean)*100
-                    print("Width: " + str(interval_percent_width))
-                    if interval_percent_width < width:
+                    mean, var, std = st.bayes_mvs(values, interval)
+                    cur_width = mean[1][1] - mean[1][0]
+                    print(f'Current width: {cur_width}')
+                    percent_width = (cur_width / mean[0]) * 100
+                    print(f'Current percent width: {percent_width}')
+                    if percent_width <= width:
                         width_achieved = True
                         print("Target reached!")
-                        print(f"Final mean: {sample_mean}")
-                        print(f"Final confidence interval: {ci}")
-                        print(f"Final width: +-{interval_percent_width}%")
-                        print(f"Number of Samples: {len(values)}" )
+                        print(f'Final width: {cur_width}')
+                        print(f'Final percent width: {percent_width}')
+                        print(f'Final mean: {mean[0]}')
+                        print(f'Final number of samples: {len(values)}')
                         process.send_signal(signal.SIGINT)
+                    # print(values)
+                    # deg_freedom = len(values) - 1
+                    # sample_mean = numpy.nanmean(values)
+                    # sample_sem = st.sem(values)
+                    # ci = st.t.interval(interval, deg_freedom, sample_mean, sample_sem)
+                    # # print(ci)
+                    # interval_width = abs(sample_mean-ci[0])
+                    # interval_percent_width = (interval_width/sample_mean)*100
+                    # print("Width: " + str(interval_percent_width))
+                    # if interval_percent_width < width:
+                    #     width_achieved = True
+                    #     print("Target reached!")
+                    #     print(f"Final mean: {sample_mean}")
+                    #     print(f"Final confidence interval: {ci}")
+                    #     print(f"Final width: +-{interval_percent_width}%")
+                    #     print(f"Number of Samples: {len(values)}" )
+                    #     process.send_signal(signal.SIGINT)
 
     # Write this output to a file for parsing later
     # print(output_array)
@@ -112,7 +125,7 @@ def main(argv):
     # Parse command line arguments
     command = "iperf -c 127.0.0.1 -t 60 -i 0.25 -f m -P 2"
     level = 0.95
-    width = 2.5
+    width = 5
     minSamples = 10
     numToSkip = 10
     output_file = None
